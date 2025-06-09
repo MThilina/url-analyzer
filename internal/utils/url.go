@@ -13,10 +13,20 @@ func NormalizeAndValidateURL(raw string) (string, error) {
 	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
 		raw = "http://" + raw
 	}
+
 	parsed, err := url.ParseRequestURI(raw)
-	if err != nil || parsed.Host == "" {
+	if err != nil {
 		return "", errors.New("invalid URL")
 	}
+
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return "", errors.New("invalid scheme")
+	}
+
+	if parsed.Host == "" || strings.Contains(parsed.Host, "!") {
+		return "", errors.New("invalid host")
+	}
+
 	return parsed.String(), nil
 }
 
