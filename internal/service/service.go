@@ -8,10 +8,23 @@ import (
 	"strings"
 	"time"
 	"url-analyzer/internal/model"
-	"url-analyzer/internal/utils"
 
 	"github.com/PuerkitoBio/goquery"
 )
+
+type linkCheckResult struct {
+	index int
+	ok    bool
+}
+
+func checkLinkAccessible(link string, index int, ch chan<- linkCheckResult, client *http.Client) {
+	resp, err := client.Head(link)
+	if err != nil || resp.StatusCode >= 400 {
+		ch <- linkCheckResult{index: index, ok: false}
+		return
+	}
+	ch <- linkCheckResult{index: index, ok: true}
+}
 
 func AnalyzeURL(pageURL string) (*model.AnalyzeResponse, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -30,30 +43,19 @@ func AnalyzeURL(pageURL string) (*model.AnalyzeResponse, error) {
 		return nil, errors.New("failed to parse HTML document: " + err.Error())
 	}
 
-	// Determine HTML version
-	htmlVersion := "HTML5" // default assumption
-	doc.Find("doctype").Each(func(i int, s *goquery.Selection) {
-		if goquery.NodeName(s) == "!doctype" {
-			text := strings.ToLower(s.Text())
-			if !strings.Contains(text, "html") {
-				htmlVersion = "Unknown"
-			}
-		}
-	})
+	defer resp.Body.Close()
 
-	// Get title
+	htmlVersion := "HTML5"
 	title := doc.Find("title").Text()
 
-	// Count headings
 	headings := make(map[string]int)
 	for i := 1; i <= 6; i++ {
 		tag := "h" + strconv.Itoa(i)
 		headings[tag] = doc.Find(tag).Length()
 	}
 
-	// Link analysis
 	base, _ := url.Parse(pageURL)
-	internal, external, inaccessible := 0, 0, 0
+	var links []string
 
 	doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("href")
@@ -62,19 +64,28 @@ func AnalyzeURL(pageURL string) (*model.AnalyzeResponse, error) {
 			return
 		}
 		resolved := base.ResolveReference(link)
+		links = append(links, resolved.String())
+	})
 
-		if resolved.Hostname() == base.Hostname() {
+	results := make(chan linkCheckResult, len(links))
+	for i, link := range links {
+		go checkLinkAccessible(link, i, results, client)
+	}
+
+	internal, external, inaccessible := 0, 0, 0
+	for i := 0; i < len(links); i++ {
+		result := <-results
+		linkURL, _ := url.Parse(links[result.index])
+		if linkURL.Hostname() == base.Hostname() {
 			internal++
 		} else {
 			external++
 		}
-
-		if !utils.IsLinkAccessible(resolved.String()) {
+		if !result.ok {
 			inaccessible++
 		}
-	})
+	}
 
-	// Check for login form
 	hasLoginForm := false
 	doc.Find("input").Each(func(i int, s *goquery.Selection) {
 		t, _ := s.Attr("type")
