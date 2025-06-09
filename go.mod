@@ -2,6 +2,8 @@ module url-analyzer
 
 go 1.24.4
 
+require gopkg.in/yaml.v3 v3.0.1
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
