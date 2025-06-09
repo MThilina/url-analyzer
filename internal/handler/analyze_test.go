@@ -1,4 +1,4 @@
-package test
+package handler
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"url-analyzer/internal/handler"
 	"url-analyzer/internal/model"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +15,7 @@ import (
 func setupRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	r := gin.Default()
-	r.POST("/analyze", handler.AnalyzeHandler)
+	r.POST("/analyze", AnalyzeHandler)
 	return r
 }
 
@@ -24,7 +23,7 @@ func TestAnalyzeHandler_InvalidURL(t *testing.T) {
 	router := setupRouter()
 
 	reqBody := model.AnalyzeRequest{
-		URL: "not-a-valid-url",
+		URL: "ht!tp://invalid-url",
 	}
 	body, _ := json.Marshal(reqBody)
 
@@ -35,7 +34,11 @@ func TestAnalyzeHandler_InvalidURL(t *testing.T) {
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, http.StatusBadRequest, resp.Code)
-	assert.Contains(t, resp.Body.String(), "invalid URL")
+
+	var errResp model.ErrorResponse
+	json.Unmarshal(resp.Body.Bytes(), &errResp)
+
+	assert.Contains(t, errResp.Message, "validation for 'URL'")
 }
 
 func TestAnalyzeHandler_MissingURLField(t *testing.T) {
@@ -49,7 +52,10 @@ func TestAnalyzeHandler_MissingURLField(t *testing.T) {
 	router.ServeHTTP(resp, req)
 
 	assert.Equal(t, http.StatusBadRequest, resp.Code)
-	assert.Contains(t, resp.Body.String(), "Invalid request")
+
+	var errResp model.ErrorResponse
+	json.Unmarshal(resp.Body.Bytes(), &errResp)
+	assert.Contains(t, errResp.Message, "validation")
 }
 
 func TestAnalyzeHandler_ValidURL(t *testing.T) {
