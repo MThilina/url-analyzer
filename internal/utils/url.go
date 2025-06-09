@@ -3,8 +3,10 @@ package utils
 
 import (
 	"errors"
+	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func NormalizeAndValidateURL(raw string) (string, error) {
@@ -16,4 +18,14 @@ func NormalizeAndValidateURL(raw string) (string, error) {
 		return "", errors.New("invalid URL")
 	}
 	return parsed.String(), nil
+}
+
+func IsLinkAccessible(link string) bool {
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Head(link)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode < 400
 }
