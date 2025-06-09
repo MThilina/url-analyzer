@@ -26,6 +26,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Static("/static", "./static")
 
 	r.POST("/analyze", handler.AnalyzeHandler)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
