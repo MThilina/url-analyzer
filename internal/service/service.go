@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 	"url-analyzer/internal/model"
+	"url-analyzer/internal/utils"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -29,12 +30,12 @@ func AnalyzeURL(pageURL string) (*model.AnalyzeResponse, error) {
 	}
 
 	// Determine HTML version
-	htmlVersion := "Unknown"
+	htmlVersion := "HTML5" // default assumption
 	doc.Find("doctype").Each(func(i int, s *goquery.Selection) {
 		if goquery.NodeName(s) == "!doctype" {
 			text := strings.ToLower(s.Text())
-			if strings.Contains(text, "html") {
-				htmlVersion = "HTML5"
+			if !strings.Contains(text, "html") {
+				htmlVersion = "Unknown"
 			}
 		}
 	})
@@ -51,9 +52,7 @@ func AnalyzeURL(pageURL string) (*model.AnalyzeResponse, error) {
 
 	// Link analysis
 	base, _ := url.Parse(pageURL)
-	internal := 0
-	external := 0
-	inaccessible := 0
+	internal, external, inaccessible := 0, 0, 0
 
 	doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
 		href, _ := s.Attr("href")
@@ -69,9 +68,7 @@ func AnalyzeURL(pageURL string) (*model.AnalyzeResponse, error) {
 			external++
 		}
 
-		// Check accessibility
-		linkResp, err := client.Head(resolved.String())
-		if err != nil || linkResp.StatusCode >= 400 {
+		if !utils.IsLinkAccessible(resolved.String()) {
 			inaccessible++
 		}
 	})

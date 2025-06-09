@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"url-analyzer/internal/model"
 	"url-analyzer/internal/service"
+	"url-analyzer/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,7 +26,13 @@ func AnalyzeHandler(c *gin.Context) {
 		return
 	}
 
-	resp, err := service.AnalyzeURL(req.URL)
+	normalizedURL, err := utils.NormalizeAndValidateURL(req.URL)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: err.Error()})
+		return
+	}
+
+	resp, err := service.AnalyzeURL(normalizedURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, model.ErrorResponse{Message: err.Error()})
 		return
