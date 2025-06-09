@@ -4,11 +4,12 @@ package main
 import (
 	"log"
 
+	"url-analyzer/config"
 	_ "url-analyzer/docs"
-	"url-analyzer/internal/config"
-	"url-analyzer/internal/handler"
 
 	"github.com/gin-gonic/gin"
+
+	"url-analyzer/internal/handler"
 
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -26,10 +27,26 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	// Serve static CSS/JS
 	r.Static("/static", "./static")
 
+	// Load HTML templates
+	r.LoadHTMLGlob("template/*")
+
+	// Serve UI
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "index.html", nil)
+	})
+
+	// Serve backend API
 	r.POST("/analyze", handler.AnalyzeHandler)
+
+	// Swagger API documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	r.Run(":" + cfg.Server.Port)
+	// Start server on configured port
+	if err := r.Run(":" + cfg.Server.Port); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
+	}
 }
