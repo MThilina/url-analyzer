@@ -1,0 +1,99 @@
+package service
+
+import (
+	"errors"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+	"url-analyzer/internal/model"
+
+	"github.com/PuerkitoBio/goquery"
+)
+
+func AnalyzeURL(pageURL string) (*model.AnalyzeResponse, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(pageURL)
+	if err != nil {
+		return nil, errors.New("unable to fetch the URL: " + err.Error())
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return nil, errors.New("received non-OK HTTP status: " + resp.Status)
+	}
+
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, errors.New("failed to parse HTML document: " + err.Error())
+	}
+
+	// Determine HTML version
+	htmlVersion := "Unknown"
+	doc.Find("doctype").Each(func(i int, s *goquery.Selection) {
+		if goquery.NodeName(s) == "!doctype" {
+			text := strings.ToLower(s.Text())
+			if strings.Contains(text, "html") {
+				htmlVersion = "HTML5"
+			}
+		}
+	})
+
+	// Get title
+	title := doc.Find("title").Text()
+
+	// Count headings
+	headings := make(map[string]int)
+	for i := 1; i <= 6; i++ {
+		tag := "h" + string('0'+i)
+		headings[tag] = doc.Find(tag).Length()
+	}
+
+	// Link analysis
+	base, _ := url.Parse(pageURL)
+	internal := 0
+	external := 0
+	inaccessible := 0
+
+	doc.Find("a[href]").Each(func(i int, s *goquery.Selection) {
+		href, _ := s.Attr("href")
+		link, err := url.Parse(href)
+		if err != nil || link.Scheme == "mailto" {
+			return
+		}
+		resolved := base.ResolveReference(link)
+
+		if resolved.Hostname() == base.Hostname() {
+			internal++
+		} else {
+			external++
+		}
+
+		// Check accessibility
+		linkResp, err := client.Head(resolved.String())
+		if err != nil || linkResp.StatusCode >= 400 {
+			inaccessible++
+		}
+	})
+
+	// Check for login form
+	hasLoginForm := false
+	doc.Find("input").Each(func(i int, s *goquery.Selection) {
+		t, _ := s.Attr("type")
+		if strings.ToLower(t) == "password" {
+			hasLoginForm = true
+		}
+	})
+
+	return &model.AnalyzeResponse{
+		HTMLVersion:  htmlVersion,
+		Title:        title,
+		Headings:     headings,
+		HasLoginForm: hasLoginForm,
+		Links: model.LinkSummary{
+			Internal:     internal,
+			External:     external,
+			Inaccessible: inaccessible,
+		},
+	}, nil
+}
