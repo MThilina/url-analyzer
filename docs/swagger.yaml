@@ -1,0 +1,74 @@
+basePath: /
+definitions:
+  model.AnalyzeRequest:
+    properties:
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  model.AnalyzeResponse:
+    properties:
+      hasLoginForm:
+        type: boolean
+      headings:
+        additionalProperties:
+          type: integer
+        type: object
+      htmlVersion:
+        type: string
+      links:
+        $ref: '#/definitions/model.LinkSummary'
+      title:
+        type: string
+    type: object
+  model.ErrorResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  model.LinkSummary:
+    properties:
+      external:
+        type: integer
+      inaccessible:
+        type: integer
+      internal:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Analyzes a webpage for structure and link metadata
+  title: URL Analyzer API
+  version: "1.0"
+paths:
+  /analyze:
+    post:
+      consumes:
+      - application/json
+      description: Extracts HTML metadata from a given URL
+      parameters:
+      - description: URL to analyze
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.AnalyzeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.AnalyzeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Analyze a webpage
+swagger: "2.0"

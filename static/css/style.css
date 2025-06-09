@@ -1,0 +1,29 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 2rem;
+    background-color: #f9f9f9;
+  }
+  
+  .container {
+    max-width: 600px;
+    margin: auto;
+  }
+  
+  input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 1rem;
+  }
+  
+  button {
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  
+  pre {
+    background: #f0f0f0;
+    padding: 1rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  
