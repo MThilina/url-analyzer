@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 	"url-analyzer/internal/model"
@@ -46,7 +47,7 @@ func AnalyzeURL(pageURL string) (*model.AnalyzeResponse, error) {
 	// Count headings
 	headings := make(map[string]int)
 	for i := 1; i <= 6; i++ {
-		tag := "h" + string('0'+i)
+		tag := "h" + strconv.Itoa(i)
 		headings[tag] = doc.Find(tag).Length()
 	}
 
