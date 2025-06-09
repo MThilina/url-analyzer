@@ -46,6 +46,8 @@ require (
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
+	github.com/swaggo/files v1.0.1
+	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.8.12 // indirect
 	github.com/urfave/cli/v2 v2.3.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
