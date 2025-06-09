@@ -1,0 +1,26 @@
+name: PR Merge Build Check
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  build-and-test-on-merge:
+    if: github.event.pull_request.merged == true && github.base_ref != 'development'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.21
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Run tests
+      run: go test ./...

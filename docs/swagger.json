@@ -1,0 +1,114 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Analyzes a webpage for structure and link metadata",
+        "title": "URL Analyzer API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/analyze": {
+            "post": {
+                "description": "Extracts HTML metadata from a given URL",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Analyze a webpage",
+                "parameters": [
+                    {
+                        "description": "URL to analyze",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AnalyzeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.AnalyzeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.AnalyzeRequest": {
+            "type": "object",
+            "required": [
+                "url"
+            ],
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.AnalyzeResponse": {
+            "type": "object",
+            "properties": {
+                "hasLoginForm": {
+                    "type": "boolean"
+                },
+                "headings": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "htmlVersion": {
+                    "type": "string"
+                },
+                "links": {
+                    "$ref": "#/definitions/model.LinkSummary"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.LinkSummary": {
+            "type": "object",
+            "properties": {
+                "external": {
+                    "type": "integer"
+                },
+                "inaccessible": {
+                    "type": "integer"
+                },
+                "internal": {
+                    "type": "integer"
+                }
+            }
+        }
+    }
+}
