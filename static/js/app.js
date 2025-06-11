@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/analyze", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
+        cache:   "no-cache", 
         body:    JSON.stringify({ url })
       });
 
