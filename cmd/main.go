@@ -15,6 +15,17 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
+// NoCacheMiddleware disables all caching in the client
+func NoCacheMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
+		c.Header("Surrogate-Control", "no-store")
+		c.Next()
+	}
+}
+
 // @title URL Analyzer API
 // @version 1.0
 // @description Analyzes a webpage for structure and link metadata
@@ -27,6 +38,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(NoCacheMiddleware())
 
 	// Serve static CSS/JS
 	r.Static("/static", "./static")
